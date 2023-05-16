@@ -29,10 +29,10 @@ func BuildpackCreate(logger logging.Logger, creator BuildpackCreateCreator) *cob
 	flags := BuildpackCreateFlags{}
 	cmd := &cobra.Command{
 		Use:     "create",
-		Short:   "Creates basic scaffolding of a buildpack.",
+		Short:   "(Experimental) Creates basic scaffolding of a buildpack.",
 		Args:    cobra.MatchAll(cobra.ExactArgs(0)),
 		Example: "pack buildpack create",
-		Long:    "buildpack new generates the basic scaffolding of a buildpack repository.",
+		Long:    "buildpack create generates the basic scaffolding of a buildpack repository.",
 		RunE: logError(logger, func(cmd *cobra.Command, args []string) error {
 			if err := creator.CreateBuildpack(cmd.Context(), client.CreateBuildpackOptions{
 				Template:  flags.Template,
@@ -51,20 +51,38 @@ func BuildpackCreate(logger logging.Logger, creator BuildpackCreateCreator) *cob
 	cmd.Flags().StringVar(&flags.SubPath, "sub-path", "", "directory within template git repository used to generate the buildpack")
 	cmd.Flags().StringToStringVarP(&flags.Arguments, "arg", "a", nil, "arguments to the buildpack template")
 
-	cmd.SetHelpFunc(func(*cobra.Command, []string) {
-		s, err := scafall.NewScafall(flags.Template, scafall.WithSubPath(flags.SubPath))
-		if err != nil {
-			logger.Errorf("unable to get help for template: %s", err)
-		} else {
-			info, args, err := s.TemplateArguments()
+	AddHelpFlag(cmd, "create")
+
+	cmd.AddCommand(BuildpackCreateInspect(logger))
+	return cmd
+}
+
+func BuildpackCreateInspect(logger logging.Logger) *cobra.Command {
+	flags := BuildpackCreateFlags{}
+	cmd := &cobra.Command{
+		Use:     "inspect",
+		Short:   "inspect available buildpack templates",
+		Example: "pack buildpack create inspect",
+		Long:    "buildpack create inspect displays the available templates",
+		RunE: logError(logger, func(cmd *cobra.Command, args []string) error {
+			s, err := scafall.NewScafall(flags.Template, scafall.WithSubPath(flags.SubPath))
 			if err != nil {
-				logger.Errorf("unable to get template arguments for template: %s", err)
+				logger.Errorf("unable to get help for template: %s", err)
+			} else {
+				info, args, err := s.TemplateArguments()
+				if err != nil {
+					logger.Errorf("unable to get template arguments for template: %s", err)
+				}
+				logger.Info(info)
+				for _, arg := range args {
+					logger.Infof("\t%s", arg)
+				}
 			}
-			logger.Info(info)
-			for _, arg := range args {
-				logger.Infof("\t%s", arg)
-			}
-		}
-	})
+			return nil
+		}),
+	}
+
+	cmd.Flags().StringVarP(&flags.Template, "template", "t", CNBTemplates, "URL of the buildpack template git repository")
+	cmd.Flags().StringVar(&flags.SubPath, "sub-path", "", "directory within template git repository used to generate the buildpack")
 	return cmd
 }

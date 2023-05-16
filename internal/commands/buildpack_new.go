@@ -29,22 +29,18 @@ type BuildpackNewFlags struct {
 
 // BuildpackCreator creates buildpacks
 type BuildpackCreator interface {
-	// Deprecated: use CreateBuildpack instead
 	NewBuildpack(ctx context.Context, options client.NewBuildpackOptions) error
 }
 
 // BuildpackNew generates the scaffolding of a buildpack
-//
-// Deprecated: Use BuildpackCreate instead
 func BuildpackNew(logger logging.Logger, creator BuildpackCreator) *cobra.Command {
 	var flags BuildpackNewFlags
 	cmd := &cobra.Command{
-		Deprecated: "use `pack buildpack create` instead",
-		Use:        "new <id>",
-		Short:      "Creates basic scaffolding of a buildpack.",
-		Args:       cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		Example:    "pack buildpack new sample/my-buildpack",
-		Long:       "buildpack new generates the basic scaffolding of a buildpack repository. It creates a new directory `name` in the current directory (or at `path`, if passed as a flag), and initializes a buildpack.toml, and two executable bash scripts, `bin/detect` and `bin/build`. ",
+		Use:     "new <id>",
+		Short:   "Creates basic scaffolding of a buildpack.",
+		Args:    cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+		Example: "pack buildpack new sample/my-buildpack",
+		Long:    "buildpack new generates the basic scaffolding of a buildpack repository. It creates a new directory `name` in the current directory (or at `path`, if passed as a flag), and initializes a buildpack.toml, and two executable bash scripts, `bin/detect` and `bin/build`. ",
 		RunE: logError(logger, func(cmd *cobra.Command, args []string) error {
 			logger.Warn("pack buildpack new is deprecated, prefer pack buildpack create instead")
 			id := args[0]
